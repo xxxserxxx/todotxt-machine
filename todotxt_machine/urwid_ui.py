@@ -894,8 +894,13 @@ Searching
             self.listbox.body.pop(i)
 
     def reload_todos_from_memory(self):
-        for t in self.todos.todo_items:
-            self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
+        if self.filtering:
+            self.filter_todo_list()
+        else:
+            for t in self.todos.todo_items:
+                self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
+        #TODO need to add search and filter condition in here
+
 
     def clear_filters(self, button=None):
         self.delete_todo_widgets()
