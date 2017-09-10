@@ -179,6 +179,9 @@ class TodoWidget(urwid.Button):
             self.parent_ui.update_filters(new_contexts=self.todo.contexts, new_projects=self.todo.projects)
         self.editing = False
 
+        if self.parent_ui.todos.autosave:
+            self.parent_ui.todos.save()
+
     def keypress(self, size, key):
         if self.editing:
             if key in ['down', 'up']:
@@ -453,14 +456,13 @@ class UrwidUI:
             self.update_header()
 
     def reload_todos_from_file(self, button=None):
-        self.delete_todo_widgets()
+        if self.todos.reload_from_file():
+            self.delete_todo_widgets()
+            
+            for t in self.todos.todo_items:
+                self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
 
-        self.todos.reload_from_file()
-
-        for t in self.todos.todo_items:
-            self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
-
-        self.update_header("Reloaded")
+            self.update_header("Reloaded")
 
     def keystroke(self, input):
         focus, focus_index = self.listbox.get_focus()
