@@ -3,7 +3,6 @@
 import re
 import random
 from datetime import date
-import threading
 
 class Todo:
     """Single Todo item"""

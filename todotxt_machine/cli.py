@@ -151,7 +151,6 @@ def main():
 
     todos.autosave = enable_autosave
 
-    print(os.path.split(todotxt_file_path)[0])
     observer = Observer()
     observer.schedule(AutoLoad(patterns=['*/'+os.path.split(todotxt_file_path)[1]]), 
             os.path.split(todotxt_file_path)[0], recursive=False)
