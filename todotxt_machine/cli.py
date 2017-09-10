@@ -42,37 +42,11 @@ elif sys.version_info[0] < 3:
     config_parser_module = ConfigParser
 
 
-autosave_lock = threading.Lock()
-recent_autosave = False
-
-def autosave():
-    if not enable_autosave:
-        return
-
-    # print "autosaving..."
-    with autosave_lock:
-        # view.save_todos() # TODO: Saved message isn't displayed, need to force redraw urwid ui?
-        view.todos.save()
-        global recent_autosave
-        recent_autosave = True
-
-    # Check the flag once again, as the flag may have been set
-    # after the last check but before this statement is executed.
-    if enable_autosave:
-        global timer
-        timer = threading.Timer(10.0, autosave)
-        timer.start()
 
 
-timer = threading.Timer(10.0, autosave)
 
 class AutoLoad(PatternMatchingEventHandler):
     def on_modified(self, event):
-        global recent_autosave
-        if recent_autosave:
-            recent_autosave = False
-            return
-
         view.reload_todos_from_file()
         view.loop.draw_screen()
 
@@ -175,6 +149,8 @@ def main():
         exit_with_error("ERROR: unable to open {0}\n\nEither specify one as an argument on the command line or set it in your configuration file ({0}).".format(todotxt_file_path, arguments['--config']))
         todos = Todos([], todotxt_file_path, donetxt_file_path)
 
+    todos.autosave = enable_autosave
+
     print(os.path.split(todotxt_file_path)[0])
     observer = Observer()
     observer.schedule(AutoLoad(patterns=['*/'+os.path.split(todotxt_file_path)[1]]), 
@@ -189,8 +165,6 @@ def main():
     global view
     view = UrwidUI(todos, keyBindings, colorscheme)
 
-    timer.start()
-
     view.main(  # start up the urwid UI event loop
         enable_borders,
         enable_word_wrap,
@@ -202,14 +176,9 @@ def main():
     observer.stop()
     observer.join()
 
-    # Shut down the auto-saving thread.
-    enable_autosave = False
-    timer.cancel()
 
-    # Final save
-    with autosave_lock:
-        # print("Writing: {0}".format(todotxt_file_path))
-        view.todos.save()
+    # final save
+    view.todos.save()
 
     exit(0)
 
