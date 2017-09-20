@@ -587,11 +587,10 @@ class UrwidUI:
         else:
             focus_index = self.listbox.get_focus()[1]
 
+        prepopulate = ''
         if self.filtering:
             position = 'append'
             prepopulate = ' '.join(set(self.active_contexts)) + ' '.join(set(self.active_projects)) 
-        else:
-            prepoulate = ''
 
         if position is 'append':
             new_index = self.todos.append(prepopulate, add_creation_date=False)
