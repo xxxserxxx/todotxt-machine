@@ -338,7 +338,7 @@ class Todos:
         search_string = re.escape(search_string)
         # print(search_string)
         ss = []
-        substrings = search_string.split("\\")
+        substrings = search_string.split("\\\\")
         for index, substring in enumerate(substrings):
             s = ".*?".join(substring)
             # s.replace(" .*?", " ")
@@ -347,7 +347,7 @@ class Todos:
             ss.append(s)
         # print(repr(ss))
         search_string_regex = '^.*('
-        search_string_regex += "\\".join(ss)
+        search_string_regex += "\\\\".join(ss)
         search_string_regex += ').*'
         # print(search_string_regex)
 
