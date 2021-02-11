@@ -588,13 +588,13 @@ class UrwidUI:
         if self.filtering:
             position = 'append'
 
-        if position is 'append':
+        if position == 'append':
             new_index = self.todos.append('', add_creation_date=False)
             self.listbox.body.append(TodoWidget(self.todos[new_index], self.key_bindings, self.colorscheme, self, editing=True, wrapping=self.wrapping[0], border=self.border[0]))
         else:
-            if position is 'insert_after':
+            if position == 'insert_after':
                 new_index = self.todos.insert(focus_index + 1, '', add_creation_date=False)
-            elif position is 'insert_before':
+            elif position == 'insert_before':
                 new_index = self.todos.insert(focus_index, '', add_creation_date=False)
 
             self.listbox.body.insert(new_index, TodoWidget(self.todos[new_index], self.key_bindings, self.colorscheme, self, editing=True, wrapping=self.wrapping[0], border=self.border[0]))
