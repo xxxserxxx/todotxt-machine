@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 import re
-import random
 from datetime import date
 
 
@@ -335,12 +334,11 @@ class Todos:
         return [item for item in self.todo_items if set(projects) & set(item.projects) or set(contexts) & set(item.contexts)]
 
     def search(self, search_string):
-        search_string = re.escape(search_string)
         # print(search_string)
         ss = []
         substrings = search_string.split("\\\\")
         for index, substring in enumerate(substrings):
-            s = ".*?".join(substring)
+            s = ".*?".join([re.escape(x) for x in substring])
             # s.replace(" .*?", " ")
             if 0 < index < len(substrings) - 1:
                 s += ".*?"
