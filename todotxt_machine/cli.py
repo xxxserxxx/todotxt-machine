@@ -82,16 +82,16 @@ def get_real_path(filename, description):
             # directory exists, but no todo.txt file - create an empty one
             open(file_path, 'a').close()
         else:
-            exit_with_error("ERROR: The directory: '{0}' does not exist\n\nPlease create the directory or specify a different\n{0} file on the command line.".format(directory, description))
+            exit_with_error("ERROR: The directory: '{0}' does not exist\n\nPlease create the directory or specify a different\n{1} file on the command line.".format(directory, description))
 
     return file_path
 
 
 def get_boolean_config_option(cfg, section, option, default=False):
     value = dict(cfg.items(section)).get(option, default)
-    if (type(value) != bool and
-        (str(value).lower() == 'true' or
-         str(value).lower() == '1')):
+    if (type(value) != bool
+        and (str(value).lower() == 'true'
+             or str(value).lower() == '1')):
         value = True
     else:
         # If present but is not True or 1
@@ -158,8 +158,8 @@ def main():
     try:
         with open(todotxt_file_path, "r") as todotxt_file:
             todos = Todos(todotxt_file.readlines(), todotxt_file_path, donetxt_file_path)
-    except:
-        exit_with_error("ERROR: unable to open {0}\n\nEither specify one as an argument on the command line or set it in your configuration file ({0}).".format(todotxt_file_path, arguments['--config']))
+    except EnvironmentError:
+        exit_with_error("ERROR: unable to open {0}\n\nEither specify one as an argument on the command line or set it in your configuration file ({1}).".format(todotxt_file_path, arguments['--config']))
         todos = Todos([], todotxt_file_path, donetxt_file_path)
 
     show_toolbar = get_boolean_config_option(cfg, 'settings', 'show-toolbar')
