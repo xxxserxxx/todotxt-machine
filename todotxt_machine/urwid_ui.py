@@ -179,6 +179,9 @@ class TodoWidget(urwid.Button):
             self.parent_ui.update_filters(new_contexts=self.todo.contexts, new_projects=self.todo.projects)
         self.editing = False
 
+        if self.parent_ui.todos.autosave:
+            self.parent_ui.todos.save()
+
     def keypress(self, size, key):
         if self.editing:
             if key in ['down', 'up']:
@@ -453,14 +456,13 @@ class UrwidUI:
             self.update_header()
 
     def reload_todos_from_file(self, button=None):
-        self.delete_todo_widgets()
+        if self.todos.reload_from_file():
+            self.delete_todo_widgets()
+            
+            for t in self.todos.todo_items:
+                self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
 
-        self.todos.reload_from_file()
-
-        for t in self.todos.todo_items:
-            self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
-
-        self.update_header("Reloaded")
+            self.update_header("Reloaded")
 
     def keystroke(self, input):
         focus, focus_index = self.listbox.get_focus()
@@ -585,11 +587,13 @@ class UrwidUI:
         else:
             focus_index = self.listbox.get_focus()[1]
 
+        prepopulate = ''
         if self.filtering:
             position = 'append'
+            prepopulate = ' '.join(set(self.active_contexts)) + ' '.join(set(self.active_projects)) 
 
-        if position == 'append':
-            new_index = self.todos.append('', add_creation_date=False)
+        if position is 'append':
+            new_index = self.todos.append(prepopulate, add_creation_date=False)
             self.listbox.body.append(TodoWidget(self.todos[new_index], self.key_bindings, self.colorscheme, self, editing=True, wrapping=self.wrapping[0], border=self.border[0]))
         else:
             if position == 'insert_after':
@@ -882,8 +886,13 @@ Searching
             self.listbox.body.pop(i)
 
     def reload_todos_from_memory(self):
-        for t in self.todos.todo_items:
-            self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
+        if self.filtering:
+            self.filter_todo_list()
+        else:
+            for t in self.todos.todo_items:
+                self.listbox.body.append(TodoWidget(t, self.key_bindings, self.colorscheme, self, wrapping=self.wrapping[0], border=self.border[0]))
+        #TODO need to add search and filter condition in here
+
 
     def clear_filters(self, button=None):
         self.delete_todo_widgets()

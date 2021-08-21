@@ -30,6 +30,8 @@ from todotxt_machine.urwid_ui import UrwidUI
 from todotxt_machine.colorscheme import ColorScheme
 from todotxt_machine.keys import KeyBindings
 
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 
 # Import the correct version of configparser
 if sys.version_info[0] >= 3:
@@ -40,28 +42,13 @@ elif sys.version_info[0] < 3:
     config_parser_module = ConfigParser
 
 
-autosave_lock = threading.Lock()
 
 
-def autosave():
-    if not enable_autosave:
-        return
 
-    # print "autosaving..."
-    with autosave_lock:
-        # view.save_todos() # TODO: Saved message isn't displayed, need to force redraw urwid ui?
-        view.todos.save()
-
-    # Check the flag once again, as the flag may have been set
-    # after the last check but before this statement is executed.
-    if enable_autosave:
-        global timer
-        timer = threading.Timer(30.0, autosave)
-        timer.start()
-
-
-timer = threading.Timer(30.0, autosave)
-
+class AutoLoad(PatternMatchingEventHandler):
+    def on_modified(self, event):
+        view.reload_todos_from_file()
+        view.loop.draw_screen()
 
 def exit_with_error(message):
     sys.stderr.write(message.strip(' \n') + '\n')
@@ -162,6 +149,13 @@ def main():
         exit_with_error("ERROR: unable to open {0}\n\nEither specify one as an argument on the command line or set it in your configuration file ({1}).".format(todotxt_file_path, arguments['--config']))
         todos = Todos([], todotxt_file_path, donetxt_file_path)
 
+    todos.autosave = enable_autosave
+
+    observer = Observer()
+    observer.schedule(AutoLoad(patterns=['*/'+os.path.split(todotxt_file_path)[1]]), 
+            os.path.split(todotxt_file_path)[0], recursive=False)
+    observer.start()
+
     show_toolbar = get_boolean_config_option(cfg, 'settings', 'show-toolbar')
     show_filter_panel = get_boolean_config_option(cfg, 'settings', 'show-filter-panel')
     enable_borders = get_boolean_config_option(cfg, 'settings', 'enable-borders')
@@ -169,8 +163,6 @@ def main():
 
     global view
     view = UrwidUI(todos, keyBindings, colorscheme)
-
-    timer.start()
 
     view.main(  # start up the urwid UI event loop
         enable_borders,
@@ -180,14 +172,12 @@ def main():
 
     # UI is now shut down
 
-    # Shut down the auto-saving thread.
-    enable_autosave = False
-    timer.cancel()
+    observer.stop()
+    observer.join()
 
-    # Final save
-    with autosave_lock:
-        # print("Writing: {0}".format(todotxt_file_path))
-        view.todos.save()
+
+    # final save
+    view.todos.save()
 
     exit(0)
 

@@ -3,12 +3,11 @@
 import re
 from datetime import date
 
-
 class Todo:
     """Single Todo item"""
     _priority_regex = re.compile(r'\(([A-Z])\) ')
 
-    def __init__(self, item, index,
+    def __init__(self, item, index, parent,
                  colored="", priority="", contexts=[], projects=[],
                  creation_date="", due_date="", completed_date=""):
         self.raw = item.strip()
@@ -20,6 +19,7 @@ class Todo:
         self.due_date = due_date
         self.completed_date = completed_date
         self.colored = self.highlight()
+        self.parent = parent
         # self.colored_length = TerminalOperations.length_ignoring_escapes(self.colored)
 
     def update(self, item):
@@ -31,6 +31,8 @@ class Todo:
         self.due_date = Todos.due_date(item)
         self.completed_date = Todos.completed_date(item)
         self.colored = self.highlight()
+        if self.parent.autosave:
+            self.parent.save()
         # self.colored_length = TerminalOperations.length_ignoring_escapes(self.colored)
 
     def __repr__(self):
@@ -141,11 +143,19 @@ class Todos:
     def __init__(self, todo_items, file_path, archive_path):
         self.file_path = file_path
         self.archive_path = archive_path
+        self.autosave = True
         self.update(todo_items)
 
     def reload_from_file(self):
+        current=[t.raw + '\n' for t in self.todo_items]
         with open(self.file_path, "r") as todotxt_file:
-            self.update(todotxt_file.readlines())
+            loaded=todotxt_file.readlines()
+
+        if loaded != current:
+            self.update(loaded)
+            return True
+        else:
+            return False
 
     def save(self):
         with open(self.file_path, "w") as todotxt_file:
@@ -167,6 +177,8 @@ class Todos:
 
     def update(self, todo_items):
         self.parse_raw_entries(todo_items)
+        if self.autosave:
+            self.save()
 
     def append(self, item, add_creation_date=True):
         self.insert(len(self.todo_items), item, add_creation_date)
@@ -178,11 +190,15 @@ class Todos:
         newtodo = self.todo_items[index]
         if add_creation_date and newtodo.creation_date == "":
             newtodo.add_creation_date()
+        if self.autosave:
+            self.save()
         return index
 
     def delete(self, index):
         del self.todo_items[index]
         self.update_raw_indices()
+        if self.autosave:
+            self.save()
 
     def __iter__(self):
         self.index = -1
@@ -222,7 +238,7 @@ class Todos:
         return repr([i for i in self.todo_items])
 
     def create_todo(self, todo, index):
-        return Todo(todo, index,
+        return Todo(todo, index, self,
                     contexts=Todos.contexts(todo),
                     projects=Todos.projects(todo),
                     priority=Todos.priority(todo),
@@ -320,6 +336,9 @@ class Todos:
             second = n_items - second
 
         self.todo_items[first], self.todo_items[second] = self.todo_items[second], self.todo_items[first]
+
+        if self.autosave:
+            self.save()
 
     def filter_context(self, context):
         return [item for item in self.todo_items if context in item.contexts]
